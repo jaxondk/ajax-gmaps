@@ -89,8 +89,8 @@
 
       function initMap() {
         var map = new google.maps.Map(document.getElementById('map'), {
-          center: {lat: 40.22083, lng: -111.66504},
-          zoom: 7,
+          center: {lat: 39.977, lng: -97.207},
+          zoom: 4,
           maxZoom: 12,
           mapTypeId: 'roadmap'
         });
@@ -126,7 +126,7 @@
         <h3 id="panel-title" class="panel-title">Welcome to the Global Weather Map!</h3>
       </div>
       <div id="panel-body" class="panel-body">
-        To use the map, simply click anywhere on the map and the weather will be displayed. The Google maps API is used as well as the Google maps geocoding API. For weather information, good ole Wunderground's API is employed. Wikipedia's base API, MediaWiki is used for information about the city. Enjoy!
+        To use the map, simply click anywhere on the map and the current weather at that location will be displayed in an info window on the map; this div will also be populated with information taken from a wikipedia article about the location if one is found. The Google maps API is used as well as the Google maps geocoding API. For weather information, good ole Wunderground's API is employed. Wikipedia's base API, MediaWiki is used for information about the city. Enjoy!
       </div>
     </div>
   </body>
