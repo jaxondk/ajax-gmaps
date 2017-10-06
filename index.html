@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Global Weather Map</title>
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<script
+  src="http://code.jquery.com/jquery-3.2.1.min.js"
+  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+  crossorigin="anonymous">
+</script> <!-- this just includes the jquery library -->
+    <script>
+      function getWeather(lat, lng, infowindow) {
+        var myurl= "https://api.wunderground.com/api/67cfa24a88d77304/geolookup/conditions/q/"+lat+","+lng+".json";
+        $.ajax({
+          url: myurl,
+          dataType: "json",
+          success : function(json) {
+            if(!json.current_observation) {
+              contentString = "<h2> No weather info<br> for this location </h2>";
+              generatePanel(null);
+            }
+            else {
+              console.log("weather json: ");
+              console.log(json);
+              var city = json['location']['city'];
+              var temp = json['current_observation']['temperature_string'];
+              var weather = json['current_observation']['weather'];
+              var contentString = '<div id="content"><h2 >'+city +"</h2>";
+              contentString += '<div id="bodyContent">'+'<p><b>Temperature: </b>'+temp;
+              contentString += '<p><b>Weather: </b>'+weather;
+              contentString += '</div></div>';
+              generatePanel(json.location);
+            }
+            infowindow.setContent(contentString);
+          }
+        });
+      }
+
+      function generatePanel(loc) {
+        var title = "No Content Available";
+        var body = "";
+        if(loc != null) {
+          title = loc.city;
+          body = "Loading...";
+          var page = loc.city+",_";
+          if(loc.type == "CITY") {
+            title += ", "+loc.state;
+            page += loc.state;
+          }
+          else if (loc.type == "INTLCITY") {
+            title += ", "+loc.country_name;
+            page += loc.country_name;
+          }
+          page = page.split(' ').join('_'); //replace all spaces with underscores
+          var url = "http://en.wikipedia.org/w/api.php?action=parse&format=json&prop=text&section=0&page="+page+"&redirects&callback=?";
+          console.log(url);
+          $.ajax({
+            url : url,
+            dataType : "json",
+            success : function(json) {
+              console.log("wiki json: ");
+              console.log(json);
+              if(json.error) {
+                body = "No wiki page found for "+title;
+                $("#panel-body").html(body);
+              }
+              else {
+                var allText = json.parse.text["*"];
+                var content = $('<div></div>').html(allText);
+                // sanitize: remove links, superscript, and cite error
+                content.find('a').each(function() { $(this).replaceWith($(this).html()); });
+                content.find('sup').remove();
+                content.find('.mw-ext-cite-error').remove();
+                body = $(content).find('p');
+                $("#panel-body").html(body);
+              }
+            },
+            error : function(msg) {
+              console.log("wiki error: "+msg);
+            }
+          });
+        }
+        $("#panel-title").html(title);
+        $("#panel-body").html(body);
+      }
+
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 40.22083, lng: -111.66504},
+          zoom: 7,
+          maxZoom: 12,
+          mapTypeId: 'roadmap'
+        });
+
+        var marker = new google.maps.Marker({
+          map: map
+        });
+
+        var infowindow = new google.maps.InfoWindow();
+
+        // Make map clickable. onClick, display marker with weather for area.
+        map.addListener('click', function(e) {
+          placeMarkerAndPanTo(e.latLng, map, marker);
+          infowindow.setContent("<h2>Loading</h2>");
+          getWeather(e.latLng.lat(), e.latLng.lng(), infowindow); 
+          infowindow.open(map, marker)
+        });
+
+        function placeMarkerAndPanTo(latLng, map, marker) {
+          marker.setPosition(latLng);
+          map.panTo(latLng);
+        }
+      }
+    </script>
+
+  </head>
+  <body>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnuP3snAcFfmNrSKxaXipbTKtOrDqwGac&callback=initMap"
+         async defer></script>
+    <div id="map"></div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 id="panel-title" class="panel-title">Welcome to the Global Weather Map!</h3>
+      </div>
+      <div id="panel-body" class="panel-body">
+        To use the map, simply click anywhere on the map and the weather will be displayed. The Google maps API is used as well as the Google maps geocoding API. For weather information, good ole Wunderground's API is employed. Wikipedia's base API, MediaWiki is used for information about the city. Enjoy!
+      </div>
+    </div>
+  </body>
+</html>
